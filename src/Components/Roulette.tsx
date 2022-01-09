@@ -11,6 +11,7 @@ export const Roulette = () => {
       spin: number;
       curBet: number;
       total: number;
+      won?: boolean;
     }[]
   >();
 
@@ -33,6 +34,7 @@ export const Roulette = () => {
             <Input onChange={(e) => setBet(Number(e.target.value))} />
           </InputContainer>
           <Button onClick={handleClick}>Go</Button>
+          {started && <Label>Total spins: {result?.length}</Label>}
         </Form>
 
         {started && (
@@ -41,7 +43,7 @@ export const Roulette = () => {
               return (
                 <span key={el.spin}>
                   <Res>
-                    <LeftBox>
+                    <LeftBox win={el.won}>
                       <SpinNum>{el.spin}</SpinNum>
                     </LeftBox>
                     <Right>
@@ -111,11 +113,12 @@ const Result = styled.div`
 const Res = styled.div`
   display: flex;
 `;
-const LeftBox = styled.div`
+const LeftBox = styled.div<{ win?: boolean }>`
   width: 100%;
   max-width: 3rem;
   height: 4rem;
-  background: #aa11ff;
+  background: ${(props) => (props.win ? "green" : "#aa11ff")};
+
   display: flex;
   align-items: center;
   justify-content: center;
