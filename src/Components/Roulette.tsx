@@ -3,22 +3,51 @@ import styled from "styled-components";
 import { calculate } from "../utils/calculate";
 
 export const Roulette = () => {
-  const [money, setMoney] = useState<number>(0);
-  const [bet, setBet] = useState<number>(0);
   const [started, setStarted] = useState<boolean>(false);
   const [result, setResult] = useState<
     {
       spin: number;
       curBet: number;
       total: number;
+      money: number;
       won?: boolean;
     }[]
   >();
+  const moneyInput = React.useRef<HTMLInputElement>(null);
+  const betInput = React.useRef<HTMLInputElement>(null);
 
-  const handleClick = () => {
-    setResult(calculate({ money, bet }));
+  const calculateResult = React.useCallback(
+    () =>
+      setResult(
+        calculate({
+          money: Number(moneyInput.current?.value),
+          bet: Number(betInput.current?.value),
+        })
+      ),
+    [setResult]
+  );
+
+  const Submit = React.useCallback(() => {
+    calculateResult();
     setStarted(true);
-  };
+  }, [calculateResult]);
+
+  const keyPressed = React.useCallback(
+    (e: KeyboardEvent) => {
+      if (e.key === "Enter") {
+        Submit();
+      }
+    },
+    [Submit]
+  );
+
+  React.useEffect(() => {
+    window.addEventListener("keypress", (e: KeyboardEvent) => keyPressed(e));
+
+    return window.removeEventListener("keypress", (e: KeyboardEvent) =>
+      keyPressed(e)
+    );
+  }, [keyPressed]);
 
   return (
     <>
@@ -27,13 +56,13 @@ export const Roulette = () => {
           <Title>Roulette Calculator</Title>
           <InputContainer>
             <Label>How much money do you have?</Label>
-            <Input onChange={(e) => setMoney(Number(e.target.value))} />
+            <Input ref={moneyInput} />
           </InputContainer>
           <InputContainer>
             <Label>What's the starting bet?</Label>
-            <Input onChange={(e) => setBet(Number(e.target.value))} />
+            <Input ref={betInput} />
           </InputContainer>
-          <Button onClick={handleClick}>Go</Button>
+          <Button onClick={Submit}>Go</Button>
           {started && <Label>Total spins: {result?.length}</Label>}
         </Form>
 
@@ -50,9 +79,12 @@ export const Roulette = () => {
                       <Bet>
                         Current bet: <b>{el.curBet.toFixed(2)}</b>
                       </Bet>
-                      <Total>
-                        Total lost:{" "}
-                        <b style={{ color: "red" }}>{el.total.toFixed(2)}</b>
+                      <MoneyLeft>
+                        Money Left: <b>{el.money.toFixed(2)}</b>
+                      </MoneyLeft>
+                      <Total win={el.total}>
+                        Total Wins:{" "}
+                        <b style={{ color: "red" }}>${el.total.toFixed(2)}</b>{" "}
                       </Total>
                     </Right>
                   </Res>
@@ -117,8 +149,8 @@ const LeftBox = styled.div<{ win?: boolean }>`
   width: 100%;
   max-width: 3rem;
   height: 4rem;
-  background: ${(props) => (props.win ? "green" : "#aa11ff")};
-
+  background: ${(props) => (props.win ? "#00aa00" : "#aa0000")};
+  border-radius: 0.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
@@ -134,8 +166,19 @@ const Right = styled.div`
 const Bet = styled.p`
   padding-left: 1rem;
 `;
-const Total = styled.p`
+const MoneyLeft = styled.div`
   margin-left: 10rem !important;
+`;
+
+const Total = styled(MoneyLeft)<{ win?: number }>`
+  &::after {
+    ${({ win }) =>
+      win && win >= 0
+        ? `
+      content: " 💸";
+    `
+        : `content: " 💀"`};
+  }
 `;
 
 const SpinNum = styled.p`

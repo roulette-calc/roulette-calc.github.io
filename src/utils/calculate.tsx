@@ -4,25 +4,46 @@ export const calculate = ({ money, bet }: { money: number; bet: number }) => {
   let iter = 0;
   let spin = 0;
   let total = 0;
-  let res: { spin: number; curBet: number; total: number; won?: boolean }[] =
-    [];
+  let prevWin = false;
+  let res: {
+    spin: number;
+    curBet: number;
+    total: number;
+    money: number;
+    won?: boolean;
+  }[] = [];
   if (!money || !bet) return [];
 
   while (money >= 0) {
-    let chance = Math.random() * 100;
-    console.log("money: ", money);
-    if (chance < 49) {
-      money += bet;
-      iter = 0;
-      res.push({ spin: spin + 1, curBet: bet, total, won: true });
-    } else {
-      let curBet = Math.pow(2, iter) * bet;
+    const chance = Math.random() * 100;
+    const curBet = prevWin ? bet : Math.pow(2, iter) * bet;
+
+    if (chance < 45) {
+      money += curBet;
       total += curBet;
+      iter = 0;
+      prevWin = true;
+      res.push({
+        spin: spin + 1,
+        curBet,
+        total,
+        money,
+        won: true,
+      });
+    } else {
+      total -= curBet;
       money -= curBet;
-      money >= 0 && res.push({ spin: spin + 1, curBet, total });
+      prevWin = false;
+      money >= 0 &&
+        res.push({
+          spin: spin + 1,
+          curBet,
+          total,
+          money,
+        });
+      iter++;
     }
 
-    iter++;
     spin++;
   }
 
