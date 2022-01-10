@@ -4,6 +4,12 @@ import { calculate } from "../utils/calculate";
 
 export const Roulette = () => {
   const [started, setStarted] = useState<boolean>(false);
+  let [hasErrors, setHasErrors] = React.useState<boolean>(false);
+  let [errors, setErrors] = React.useState<{ money: boolean; bet: boolean }>({
+    money: false,
+    bet: false,
+  });
+  const errMessage = "Please enter a valid amount of money!";
   const [result, setResult] = useState<
     {
       spin: number;
@@ -27,6 +33,31 @@ export const Roulette = () => {
     [setResult]
   );
 
+  const checkForErrors = React.useCallback(
+    (
+      valueRef: React.RefObject<HTMLInputElement>,
+      betRef: React.RefObject<HTMLInputElement>
+    ) => {
+      const moneyErr = isNaN(Number(valueRef.current?.value));
+      const betErr = isNaN(Number(betRef.current?.value));
+
+      if (moneyErr || betErr) {
+        if (isNaN(Number(valueRef.current?.value))) {
+          setErrors({ money: true, bet: errors.bet });
+        }
+
+        if (isNaN(Number(betRef.current?.value))) {
+          setErrors({ money: errors.money, bet: true });
+        }
+        setHasErrors(true);
+      } else {
+        setHasErrors(false);
+        setErrors({ money: false, bet: false });
+      }
+    },
+    [errors.bet, errors.money]
+  );
+
   const Submit = React.useCallback(() => {
     calculateResult();
     setStarted(true);
@@ -35,7 +66,10 @@ export const Roulette = () => {
   const keyPressed = React.useCallback(
     (e: KeyboardEvent) => {
       if (e.key === "Enter") {
-        Submit();
+        checkForErrors(moneyInput, betInput);
+        if (!hasErrors) {
+          Submit();
+        }
       }
     },
     [Submit]
@@ -50,51 +84,51 @@ export const Roulette = () => {
   }, [keyPressed]);
 
   return (
-    <>
-      <Wrapper>
-        <Form>
-          <Title>Roulette Calculator</Title>
-          <InputContainer>
-            <Label>How much money do you have?</Label>
-            <Input ref={moneyInput} />
-          </InputContainer>
-          <InputContainer>
-            <Label>What's the starting bet?</Label>
-            <Input ref={betInput} />
-          </InputContainer>
-          <Button onClick={Submit}>Go</Button>
-          {started && <Label>Total spins: {result?.length}</Label>}
-        </Form>
+    <Wrapper>
+      <Form>
+        <Title>Roulette Calculator</Title>
+        <InputContainer>
+          <Label>How much money do you have?</Label>
+          <Input ref={moneyInput} />
+          {hasErrors && errors.money && <Error>{errMessage}</Error>}
+        </InputContainer>
+        <InputContainer>
+          <Label>What's the starting bet?</Label>
+          <Input ref={betInput} />
+          {hasErrors && errors.bet && <Error>{errMessage}</Error>}
+        </InputContainer>
+        <Button onClick={Submit}>Go</Button>
+        {started && <Label>Total spins: {result?.length}</Label>}
+      </Form>
 
-        {started && (
-          <Result key={result?.length}>
-            {result?.map((el) => {
-              return (
-                <span key={el.spin}>
-                  <Res>
-                    <LeftBox win={el.won}>
-                      <SpinNum>{el.spin}</SpinNum>
-                    </LeftBox>
-                    <Right>
-                      <Bet>
-                        Current bet: <b>{el.curBet.toFixed(2)}</b>
-                      </Bet>
-                      <MoneyLeft>
-                        Money Left: <b>{el.money.toFixed(2)}</b>
-                      </MoneyLeft>
-                      <Total win={el.total}>
-                        Total Wins:{" "}
-                        <b style={{ color: "red" }}>${el.total.toFixed(2)}</b>{" "}
-                      </Total>
-                    </Right>
-                  </Res>
-                </span>
-              );
-            })}
-          </Result>
-        )}
-      </Wrapper>
-    </>
+      {started && (
+        <Result key={result?.length}>
+          {result?.map((el) => {
+            return (
+              <span key={el.spin}>
+                <Res>
+                  <LeftBox win={el.won}>
+                    <SpinNum>{el.spin}</SpinNum>
+                  </LeftBox>
+                  <Right>
+                    <Bet>
+                      Current bet: <b>{el.curBet.toFixed(2)}</b>
+                    </Bet>
+                    <MoneyLeft>
+                      Money Left: <b>{el.money.toFixed(2)}</b>
+                    </MoneyLeft>
+                    <Total win={el.total}>
+                      Total Wins:{" "}
+                      <b style={{ color: "red" }}>${el.total.toFixed(2)}</b>{" "}
+                    </Total>
+                  </Right>
+                </Res>
+              </span>
+            );
+          })}
+        </Result>
+      )}
+    </Wrapper>
   );
 };
 
@@ -184,4 +218,8 @@ const Total = styled(MoneyLeft)<{ win?: number }>`
 const SpinNum = styled.p`
   font-size: 1.6rem;
   font-weight: 700;
+`;
+
+const Error = styled.p`
+  color: #cc0000;
 `;
